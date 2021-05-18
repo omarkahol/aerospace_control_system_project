@@ -21,30 +21,36 @@ G_n = getNominal(G);
 
 %MODELLO INCERTO
 G_array = usample(G,50);
-[~, Info] = ucover(G_array, G_n, 5);
+[~, Info] = ucover(G_array, G_n, 5); % CALCOLO DEL PESO DELL'INCERTEZZA
 
+%PLOT DEL PESO DELL'INCERTEZZA
 figure(1);
 hold on;
 bodemag((G_array-G_n)/G_n,'b', Info.W1,'r');
 hold off;
 
-
+%CONTROLLER PD
 R = tunablePID('c','pd');
 
+%NOMINAL TRANSFER FUNCTIONS
 L = R*G_n;
 S = 1/(1+L);
 F = L/(1+L);
 
+%TRANSFER FUNCTION PER IL PESO DELLA NOMINAL STABILITY
 M = 3;
 omb = 12;
 A = 1e-5;
 Wpinv = (s+omb*A)/(s/M + omb);
 Wp = 1/Wpinv;
 
+%H_INF SYNTHESIS
 opt = hinfstructOptions('Display','final','RandomStart',20);
 K = hinfstruct([S*Wp,F*Info.W1],opt);
 
-R = pid(K.Blocks.c);
+R = pid(K.Blocks.c); % RECOVERY DEL CONTROLLORE
+
+%SIMULAZIONE DEL MODELLO INCERTO
 L = G*R;
 F = L/(1+L);
 step(F,10);
