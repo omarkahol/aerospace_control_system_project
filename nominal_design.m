@@ -6,8 +6,8 @@ addpath('lib');
 
 % PERFORMANCE REQUIREMENT
 s = tf('s');
-wn = 15;
-csi = 0.99;
+wn = 12;
+csi = 0.96;
 L_so = 1/(1+2*csi*(s/wn) + (s/wn)^2);
 Wpinv = 1/(1+L_so);
 Wp = 1/Wpinv;
@@ -21,10 +21,8 @@ integrator = 1/s;
 Wqinv = tf(1);
 Wq = 1/Wqinv;
 %creiamo input e output dei blocchi
-Wp.u = 'e_{\phi}';
-Wp.y = 'e_{perf}';
 
-Rphi.u = 'e_{\phi}';
+Rphi.u = 'ephi';
 Rphi.y = 'p_0';
 Rp.u = 'e_p';
 Rp.y='\delta_{lat}';
@@ -32,42 +30,25 @@ G.u='\delta_{lat}';
 G.y='p';
 integrator.u='p';
 integrator.y='\phi';
-Wq.u='\delta_{lat}';
-Wq.y='e_{control}';
 
 %specify summing junctions
-sum1 = sumblk('e_{\phi} = \phi_0 - \phi');
+sum1 = sumblk('ephi = \phi_0 - \phi');
 sum2 = sumblk('e_p = p_0 - p');
 
 %create genss model
-T0 = minreal(connect(Wp,Wq,Rphi,Rp,G,integrator,sum1,sum2,{'\phi_0'},{'\phi','e_{perf}','e_{control}'}));
+T0 = minreal(connect(Rphi,Rp,G,integrator,sum1,sum2,{'\phi_0'},{'ephi','\delta_{lat}'}));
 
-rng('default')
-opt = hinfstructOptions('Display','final','RandomStart',5);
-T = hinfstruct(T0,opt);
+rng('default');
 
+N_TESTS = 10;
+Req = [
+    TuningGoal.WeightedGain('\phi_0','ephi',Wp, 1);
+    TuningGoal.WeightedGain('\phi_0','\delta_{lat}',Wq, 1)
+];
+
+opt = systuneOptions('RandomStart',N_TESTS, 'SoftTol', 1e-7, 'Display', 'iter');
+[T, J, ~] = systune(T0,Req, opt);
 figure(1);
-step(T*10*(1-exp(-2*s)));
+step(T);
 
-Rp = getBlockValue(T,'Rp');
-Rphi = getBlockValue(T,'Rphi');
-%----------------------------------------------------------------------------------------------------
 
-Rphi.u = 'e_{\phi}';
-Rphi.y = 'p_0';
-Rp.u = 'e_p';
-Rp.y='\delta_{lat}';
-G.u='\delta_{lat}';
-G.y='p';
-integrator.u='p';
-integrator.y='\phi';
-sum1 = sumblk('e_{\phi} = \phi_0 - \phi');
-sum2 = sumblk('e_p = p_0 - p');
-T_F = minreal(connect(Rphi,Rp,G,integrator,sum1,sum2,{'\phi_0'},{'\phi'}));
-T_Q = minreal(connect(Rphi,Rp,G,integrator,sum1,sum2,{'\phi_0'},{'\delta_{lat}'}));
-
-figure(2);
-bodemag(T_F,'k-',1-T_F,'b-',Wpinv,'r--');
-
-figure(3);
-bodemag(T_Q,'b-',Wqinv,'r--');
