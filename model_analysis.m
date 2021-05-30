@@ -1,21 +1,9 @@
+close all;
 clear variables;
 addpath('lib');
 
 %NOMINAL MODEL WITH STD = 1
-[A,B,~,~] = ss_model(3, true);
-
-C_p = [0,1,0];
-D = 0;
-G_p = tf(ss(A,B,C_p,D));
-
-%CLEAN THE NOMINAL MODEL FROM UNPHYSICAL DATA
-[num, den] = tfdata(G_p,'v');
-tol = 1e-5;
-index_n = abs(num) < tol;
-index_d = abs(den) < tol;
-num(index_n) = 0;
-den(index_d) = 0;
-G_p = tf(num, den);
+[A,B,C_p,D,G_p] = ss_model(3, true);
 
 poles = eig(G_p);
 zeros = eig(1/G_p);
@@ -29,10 +17,8 @@ legend([p,z],'Poles', 'Zeros');
 hold off;
 
 %UNCERTAIN MODEL
-[A,B,~,~] = ss_model(3, false);
+[A,B,C_p,D,G_p] = ss_model(3, false);
 
-C_p = [0,1,0];
-D = 0;
 G = uss(A,B,C_p,D);
 samples = 100;
 G_array = tf(usample(G, samples));
