@@ -1,4 +1,5 @@
 clear variables;
+addpath('lib');
 
 %NOMINAL MODEL WITH STD = 1
 [A,B,~,~] = ss_model(3, true);
@@ -6,6 +7,14 @@ clear variables;
 C_p = [0,1,0];
 D = 0;
 G_p = tf(ss(A,B,C_p,D));
+
+[num, den] = tfdata(G_p,'v');
+tol = 1e-5;
+index_n = abs(num) < tol;
+index_d = abs(den) < tol;
+num(index_n) = 0;
+den(index_d) = 0;
+G_p = tf(num, den);
 
 s = tf('s');
 
@@ -45,7 +54,7 @@ sum1 = sumblk('e_phi = phi_0 - phi');
 sum2 = sumblk('e_p = p_0 - p');
 
 %create genss model
-T0 = connect(Wp,Wq,Rphi,Rp,G_p,integrator,sum1,sum2,{'phi_0'},{'phi','e_ws','eq'});
+T0 = connect(Wp,Wq,Rphi,Rp,G_p,integrator,sum1,sum2,{'phi_0'},{'e_ws','eq','phi'});
 
 rng('default')
 opt = hinfstructOptions('Display','final','RandomStart',10);
@@ -58,7 +67,10 @@ Rphi = getBlockValue(T,'Rphi');
 L = integrator*G_p*Rp*(1- G_p*Rp/(1+G_p*Rp))*Rphi;
 
 figure(1);
-step(T,linspace(0,0.1,1000));
+step(L*(1-exp(-s))/(1+L),linspace(0,2,1000));
 
 figure(2);
 bodemag(1/(1+L), 'b-', Wpinv, 'r--');
+
+figure(3);
+step(T);
