@@ -1,3 +1,4 @@
+
 clear variables;
 addpath('lib');
 
@@ -7,11 +8,12 @@ addpath('lib');
 
 % PERFORMANCE REQUIREMENT
 s = tf('s'); %variabile di laplace s
-wn = 15; %crossover frequency
-csi = 0.98; %damping ration
-L_so = 1/(1+2*csi*(s/wn) + (s/wn)^2); %open loop transfer function --> obiettivo
+wn = 12; %crossover frequency
+csi = 0.95; %damping ratio
+F_so =1/(1+2*csi*(s/wn) + (s/wn)^2); %open loop transfer function --> obiettivo
+
 %pesi
-Wpinv = 1/(1+L_so); 
+Wpinv = 1-F_so;
 Wp = 1/Wpinv;
 
 % CONTROL REQUIRMENT
@@ -19,14 +21,23 @@ epsu = 0.01; %valore a frequenze elevate
 wbu = 1; % crossover frequency
 Mu = 2; %valore a frequenze basse 
 %psei
-Wqinv = (epsu * s + wbu)/(s+wbu/Mu);
+Wqinv =0.1*(s+100*wn)/(s+10*wn);
 Wq = 1/Wqinv;
+
 
 %--------------------------------------------------------------------------
 %GENSS MODEL
 %--------------------------------------------------------------------------
-Rp = tunablePID('Rp','pid'); %controller PID
+Rp = tunablePID('Rp','pi'); %controller PI optional
+Rp2= tunablePID('Rp2','pd'); % controlle D optional
+Rp2.Kp.Value=0;
+Rp2.Kp.Free=false;
+% Rp2.Kd.Value=0;
+% Rp2.Kd.Free=false;
+Rp2.Tf.Value = 0.08;  
+Rp2.Tf.Free = false; 
 Rphi = tunablePID('Rphi','p'); %controller P
+
 
 %blocco integratore
 integrator = 1/s;
@@ -39,7 +50,11 @@ Rphi.y = 'p_0';
 
 %controller p
 Rp.u = 'e_p';
-Rp.y='\delta_{lat}';
+Rp.y='\delta_{prelat}'; 
+
+% Controller p2
+Rp2.u='p';
+Rp2.y='y_{Rp2}';
 
 %plant
 G.u='\delta_{lat}';
@@ -52,9 +67,10 @@ integrator.y='\phi';
 %blocchi somma
 sum1 = sumblk('ephi = \phi_0 - \phi');
 sum2 = sumblk('e_p = p_0 - p');
+sum3 = sumblk('\delta_{lat}= \delta_{prelat}-y_{Rp2}');
 
 %modello gens
-T0 = minreal(connect(Rphi,Rp,G,integrator,sum1,sum2,{'\phi_0'},{'ephi','\delta_{lat}','\phi'}));
+T0 = minreal(connect(Rphi,Rp,Rp2,G,integrator,sum1,sum2,sum3,{'\phi_0'},{'ephi','\delta_{lat}','\phi'})); % optional
 
 %--------------------------------------------------------------------------
 % H INFINITY SYNTHESIS
@@ -84,20 +100,26 @@ G = uss(A,B,C,D);
 %RIDEFINISCO I BLOCCHI
 Rp = T.blocks.Rp; %recupero i valori di Rp
 Rphi = T.blocks.Rphi; %recupero i valori di Rphi
+Rp2=T.blocks.Rp2;
 integrator = 1/s;
 Rphi.u = 'ephi';
 Rphi.y = 'p_0';
 Rp.u = 'e_p';
-Rp.y='\delta_{lat}';
+
+Rp.y='\delta_{prelat}'; 
+Rp2.u='p';
+Rp2.y= 'y_{Rp2}'; 
 G.u='\delta_{lat}';
 G.y='p';
 integrator.u='p';
 integrator.y='\phi';
 sum1 = sumblk('ephi = \phi_0 - \phi');
 sum2 = sumblk('e_p = p_0 - p');
+sum3 = sumblk('\delta_{lat}= \delta_{prelat}-y_{Rp2}'); % optional
 
 % MODELLO GENSS INCERTO
-T = minreal(connect(Rphi,Rp,G,integrator,sum1,sum2,{'\phi_0'},{'ephi','\delta_{lat}','\phi'}));
+
+T = minreal(connect(Rphi,Rp,Rp2,G,integrator,sum1,sum2,sum3,{'\phi_0'},{'ephi','\delta_{lat}','\phi'})); 
 Q = getIOTransfer(T, '\phi_0','\delta_{lat}'); % SENSITIVITY FUNCTION
 S = getIOTransfer(T, '\phi_0','ephi'); %CONTROL EFFORT TRANSFER FUNCTION
 
