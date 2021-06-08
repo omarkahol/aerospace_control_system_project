@@ -17,8 +17,8 @@ Wpinv = 1-F_so;
 Wp = 1/Wpinv;
 
 % CONTROL REQUIRMENT
-epsu = 0.01; %valore a frequenze elevate
-wbu = 1; % crossover frequency
+epsu = 1; %valore a frequenze elevate
+wbu = 100; % crossover frequency
 Mu = 2; %valore a frequenze basse 
 %psei
 Wqinv =0.1*(s+100*wn)/(s+10*wn);
@@ -79,7 +79,7 @@ T0 = minreal(connect(Rphi,Rp,Rp2,G,integrator,sum1,sum2,sum3,{'\phi_0'},{'ephi',
 
 rng('default'); %inizializza il random number generator
 
-N_TESTS = 10; %numero di dati iniziali random
+N_TESTS = 4; %numero di dati iniziali random
 %requisiti
 Req = [ 
     TuningGoal.WeightedGain('\phi_0','ephi',Wp, 1);
@@ -122,7 +122,7 @@ sum3 = sumblk('\delta_{lat}= \delta_{prelat}-y_{Rp2}'); % optional
 T = minreal(connect(Rphi,Rp,Rp2,G,integrator,sum1,sum2,sum3,{'\phi_0'},{'ephi','\delta_{lat}','\phi'})); 
 Q = getIOTransfer(T, '\phi_0','\delta_{lat}'); % SENSITIVITY FUNCTION
 S = getIOTransfer(T, '\phi_0','ephi'); %CONTROL EFFORT TRANSFER FUNCTION
-
+F = getIOTransfer(T,'\phi_0','\phi');
 % PLOT DELLA SENSITIVITY FUNCTION
 figure(1);
 bodemag(S,'b-',Wpinv,'r-');
