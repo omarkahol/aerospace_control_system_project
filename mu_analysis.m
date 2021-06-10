@@ -1,4 +1,4 @@
-run('nominal_design.m');
+%run('nominal_design.m');
 
 %put the model in M-D form, Blocks is a description of the uncertainty
 %structure

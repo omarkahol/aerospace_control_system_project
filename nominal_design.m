@@ -1,4 +1,3 @@
-
 clear variables;
 addpath('lib');
 
