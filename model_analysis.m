@@ -38,7 +38,13 @@ z=plot(real(zeros),imag(zeros), 'ko');
 legend([p_u,z_u, p, z],'Uncertain Poles', 'Uncertain Zeros', 'Poles', 'Zeros');
 hold off;
 
-figure(3);
-bode(G_array);
+figure(3); hold on; grid on;
+bode(G,'b-');
+bode(G_p,'r--');
+legend('Uncertain Model', 'Nominal Model');
+
+
+
+
 
 

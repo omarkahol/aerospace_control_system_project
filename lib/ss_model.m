@@ -20,7 +20,8 @@ function [A,B,C_p,D, G_p] = ss_model(sigma, nominal)
  L_d = ureal('L_d', 1079.339, 'Percentage', sigma*2.762);
  
 % STATE SPACE MATRICES
-A = [Y_v,Y_p,9.81;L_v,L_p,0;0,1,0];
+g=9.81;
+A = [Y_v,Y_p,g;L_v,L_p,0;0,1,0];
 B = [Y_d;L_d;0];
 
 if nominal

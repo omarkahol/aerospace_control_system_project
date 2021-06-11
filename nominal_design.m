@@ -7,8 +7,8 @@ addpath('lib');
 
 % PERFORMANCE REQUIREMENT
 s = tf('s'); %variabile di laplace s
-wn = 12; %crossover frequency
-csi = 0.95; %damping ratio
+wn = 10; %crossover frequency
+csi = 0.90; %damping ratio
 F_so =1/(1+2*csi*(s/wn) + (s/wn)^2); %open loop transfer function --> obiettivo
 
 %pesi
@@ -16,25 +16,28 @@ Wpinv = 1-F_so;
 Wp = 1/Wpinv;
 
 % CONTROL REQUIRMENT
-epsu = 1; %valore a frequenze elevate
+epsu = 0.1; %valore a frequenze elevate
 wbu = 100; % crossover frequency
-Mu = 2; %valore a frequenze basse 
-%psei
-Wqinv =0.1*(s+100*wn)/(s+10*wn);
-Wq = 1/Wqinv;
+Mu = 10; %valore a frequenze basse 
+%pesi
+Wq = (s+(wbu/Mu))/(epsu*s+wbu);
+Wqinv = 1/Wq;
 
 
 %--------------------------------------------------------------------------
 %GENSS MODEL
 %--------------------------------------------------------------------------
+
+% PI CONTROLLER FOR THE P LOOP
 Rp = tunablePID('Rp','pi'); %controller PI optional
+Rp.Kp.Value = 1;
+Rp.Ki.Value = 500;
+
+% DERIVATIVE CONTROLLER
 Rp2= tunablePID('Rp2','pd'); % controlle D optional
 Rp2.Kp.Value=0;
 Rp2.Kp.Free=false;
-% Rp2.Kd.Value=0;
-% Rp2.Kd.Free=false;
-Rp2.Tf.Value = 0.08;  
-Rp2.Tf.Free = false; 
+Rp2.Kd.Value=349;
 Rphi = tunablePID('Rphi','p'); %controller P
 
 
@@ -78,7 +81,7 @@ T0 = minreal(connect(Rphi,Rp,Rp2,G,integrator,sum1,sum2,sum3,{'\phi_0'},{'ephi',
 
 rng('default'); %inizializza il random number generator
 
-N_TESTS = 4; %numero di dati iniziali random
+N_TESTS = 10; %numero di dati iniziali random
 %requisiti
 Req = [ 
     TuningGoal.WeightedGain('\phi_0','ephi',Wp, 1);
@@ -124,16 +127,16 @@ S = getIOTransfer(T, '\phi_0','ephi'); %CONTROL EFFORT TRANSFER FUNCTION
 F = getIOTransfer(T,'\phi_0','\phi');
 % PLOT DELLA SENSITIVITY FUNCTION
 figure(1);
-bodemag(S,'b-',Wpinv,'r-');
+bodemag(S,'b-',Wpinv,'r--');
 
 % PLOT DELLA CONTROL EFFORT
 figure(2);
-bodemag(Q,'b-',Wqinv,'r-');
+bodemag(Q,'b-',Wqinv,'r--');
 
 % RISPOSTA AL DOPPIO STEP
 figure(3);
-t1 = 1; t2 = 2;
-step(T*10*(1-2*exp(-t1*s) + exp(-s*t2)));
+t1 = 1; t2 = 3; t3 = 5;
+step(T*(10*exp(-t1*s) -20*exp(-s*t2)+10*exp(-t3*s)),linspace(0,10,1000));
 
 
 
