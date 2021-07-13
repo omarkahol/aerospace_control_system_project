@@ -1,4 +1,4 @@
-run('nominal_design.m');
+%run('nominal_design.m');
 
 G_n = tf(G.NominalValue);
 
@@ -10,3 +10,6 @@ figure(1); hold on; grid on;
 bodemag(tf(F),'b-');
 bodemag(1/Info.W1,'r--');
 legend("F(j \omega)","W_{inv}(j \omega)");
+
+figure(2);
+bode((G_n-G)/G_n,'b',Info.W1);

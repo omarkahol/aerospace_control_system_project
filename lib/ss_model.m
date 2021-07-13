@@ -1,14 +1,5 @@
 function [A,B,C_p,D, G_p] = ss_model(sigma, nominal)
-%STATE-SPACE_TRANSFER-FUNCTION MODEL compute the
-%state space representation of the system
-%   INPUT
-%       sigma ==> standard deviation of the uncertainty
-%       nominal ==> if true, return the nominal model
-%   
-%   OUTPUT
-%       A,B,C,D ==> state space matrices
     
-
 % STABILITY DERIVATIVES
  Y_v = ureal('Y_v', -0.264, 'Percentage', sigma*4.837);
  Y_p = 0;
@@ -21,14 +12,15 @@ function [A,B,C_p,D, G_p] = ss_model(sigma, nominal)
  
 % STATE SPACE MATRICES
 g=9.81;
-A = [Y_v,Y_p,g;L_v,L_p,0;0,1,0];
+A = [Y_v, Y_p, g;
+    L_v, L_p, 0;
+    0, 1, 0];
 B = [Y_d;L_d;0];
 
 if nominal
     A = getNominal(A);
     B = getNominal(B);
 end
-
 
 C_p = [0,1,0];
 D = 0;
